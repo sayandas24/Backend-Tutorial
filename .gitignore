@@ -1,0 +1,69 @@
+# Node modules
+node_modules/
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# MongoDB data
+data/db/
+*.lock
+
+# Binaries
+dist/
+build/
+out/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# React build output
+/client/build/
+client/node_modules/
+
+# Miscellaneous
+*.bak
+*.tmp
+
+# Coverage directory
+coverage/
+
+# Parcel-bundler cache (if applicable)
+.cache/
+
+# Storybook files (if using Storybook)
+.storybook/
+*.stories.js
+
+# ESLint and Prettier cache files
+.eslintcache
+.prettierignore
+.prettiercache
+
+# Docker-related files (if applicable)
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Testing output
+junit.xml
+test-results.xml
+coverage-final.json
+.nyc_output/
+
+# Local serverless stuff (if applicable)
+.serverless/
