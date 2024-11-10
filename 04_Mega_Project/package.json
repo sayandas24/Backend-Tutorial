@@ -2,9 +2,9 @@
   "name": "04_mega_project",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+  "type": "module",
+  "scripts": { 
+    "dev": "nodemon src/index.js"
   },
   "keywords": ["javascript", "nodejs", "express", "mongodb"],
   "author": "Sayan Das",
