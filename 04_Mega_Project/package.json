@@ -3,11 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
-  "scripts": { 
+  "scripts": {
     "dev": "nodemon src/index.js"
   },
-  "keywords": ["javascript", "nodejs", "express", "mongodb"],
+  "keywords": [
+    "javascript",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
   "author": "Sayan Das",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
 }
