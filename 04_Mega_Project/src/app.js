@@ -1,3 +1,4 @@
+// THIS APP FILE FOR DEFINING MIDDLEWARE AND EXPORTING IT TO INDEX.JS
 import express from "express"
 import cookieParser from "cookie-parser";
 import cors from "cors"

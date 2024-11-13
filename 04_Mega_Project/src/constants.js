@@ -1,1 +1,2 @@
+// VARIABLE WHO ARE CONSTANT WILL DEFINE HERE
 export const DB_NAME = 'videotube';
