@@ -16,4 +16,12 @@ app.use(express.urlencoded({ extended: true })) // middleware to accept url enco
 app.use(express.static("public")) // send static public files to frontend
 app.use(cookieParser()) // middleware to store the user cookie to perform CRUD operations
 
+
+// routes import 
+import userRouter from "./routes/user.routes.js"
+
+// routes declaration
+app.use("/api/v1/users", userRouter) // passing the control to user.router.js
+// localhost:8000/api/v1/users/register
+
 export { app }

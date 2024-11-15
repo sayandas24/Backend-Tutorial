@@ -15,10 +15,27 @@ EXAMPLE OF THIS FUNCTION
     }));
 
 */ 
-const asyncHandler = (fn) = async (err, req, res, next) => {
+
+// 1 easy way syntax that is used in production
+
+const asyncHandler = (requestHandler) => {
+    return (req, res, next) => {
+        Promise
+        .resolve(requestHandler(req, res, next))
+        .catch(err => next(err))
+    }
+}
+export { asyncHandler }
+
+
+
+/*
+2 .Example  one 
+
+ const asyncHandler = (fn) => async (err, req, res, next) => {
     try {
         await fn(req, res, next)
-
+        console.log('oks')
     } catch (error) {
         res.status(err.code || 500).json({
             success: false,
@@ -27,17 +44,8 @@ const asyncHandler = (fn) = async (err, req, res, next) => {
     }
 }
  
+*/ 
 
-export { asyncHandler }
 
-/*
-Another complex syntax that is used in production
 
-const asyncHandler (requestHandler) => {
-    (req, res, next) => {
-        Promise
-        .resolve(requestHandler(req, res, next))
-        .catch(err => next(err))
-    }
-}
-*/  
+
