@@ -19,8 +19,7 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 
 const registerUser = asyncHandler(async (req, res) => {
 
-    const { username, email, password, fullName } = req.body
-    console.log(username, email, password, fullName)
+    const { username, email, password, fullName } = req.body 
 
     // if ( username === "") throw new ApiError(400, "Username is required"); basic error handling
     if ( // advanced error handling
@@ -39,7 +38,13 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // this req.files is from multer that is passed from user.router
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path || ""; 
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
+    
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required")
