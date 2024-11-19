@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt" // for encrypting password
-import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken"; // 
 
 const userSchema = new Schema(
     {
@@ -60,6 +60,7 @@ userSchema.pre("save", async function (next) {
 });
 
 // compare user password and encrypted password using bcrypt 
+// isPasswordCorrect is a method that made by me
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
