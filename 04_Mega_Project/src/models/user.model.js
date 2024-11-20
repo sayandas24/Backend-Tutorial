@@ -62,7 +62,7 @@ userSchema.pre("save", async function (next) {
 // compare user password and encrypted password using bcrypt 
 // isPasswordCorrect is a method that made by me
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
+    return await bcrypt.compare(password, this.password) // this.passW refers to the existing user
 }
 
 // making another method to generate access token
