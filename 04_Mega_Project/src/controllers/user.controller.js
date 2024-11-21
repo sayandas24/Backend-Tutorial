@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from "jsonwebtoken"
+import { v2 as cloudinary } from "cloudinary"
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -258,7 +259,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user, "Current User fetched successfully")
+        .json(new ApiResponse(200, req.user, "Current User fetched successfully"))
 })
 
 // update account details Name and email
@@ -269,7 +270,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required")
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
@@ -287,7 +288,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 // change avatar
 const updateUserAvatar = asyncHandler(async (req, res) => {
-    const avatarLocalPath = req.file?.path;
+    const avatarLocalPath = req.file?.path; 
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is missing")
@@ -295,9 +296,14 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     // avatar name is same as db field name
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
+    // getting previous image id from user
+    const prevImgId = req.user.avatar.split("/").slice(-1)[0].split(".")[0] 
+
+    await cloudinary.uploader.destroy(prevImgId)
+     
     if (!avatar) {
         throw new ApiError(500, "Something went wrong while uploading avatar")
-    }
+    } 
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
@@ -308,6 +314,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         },
         { new: true }
     ).select("-password")
+
+    
 
     return res
         .status(200)
@@ -323,6 +331,12 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     }
     // coverImage name is same as db field name
     const coverImage = await uploadOnCloudinary(coverLocalPath)
+
+    const prevCoverImgId = req.user.coverImage.split("/").slice(-1)[0].split(".")[0] 
+    // if the coverImage is not empty then delete the previous one 
+    if (prevCoverImgId) {   
+        await cloudinary.uploader.destroy(prevCoverImgId) 
+    }
 
     if (!coverImage) {
         throw new ApiError(500, "Something went wrong while uploading coverImage")
