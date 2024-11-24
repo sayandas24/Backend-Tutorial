@@ -288,7 +288,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 // change avatar
 const updateUserAvatar = asyncHandler(async (req, res) => {
-    const avatarLocalPath = req.file?.path; 
+    const avatarLocalPath = req.file?.path;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is missing")
@@ -297,13 +297,13 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     // getting previous image id from user
-    const prevImgId = req.user.avatar.split("/").slice(-1)[0].split(".")[0] 
+    const prevImgId = req.user.avatar.split("/").slice(-1)[0].split(".")[0]
 
     await cloudinary.uploader.destroy(prevImgId)
-     
+
     if (!avatar) {
         throw new ApiError(500, "Something went wrong while uploading avatar")
-    } 
+    }
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
@@ -315,7 +315,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         { new: true }
     ).select("-password")
 
-    
+
 
     return res
         .status(200)
@@ -332,10 +332,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     // coverImage name is same as db field name
     const coverImage = await uploadOnCloudinary(coverLocalPath)
 
-    const prevCoverImgId = req.user.coverImage.split("/").slice(-1)[0].split(".")[0] 
+    const prevCoverImgId = req.user.coverImage.split("/").slice(-1)[0].split(".")[0]
     // if the coverImage is not empty then delete the previous one 
-    if (prevCoverImgId) {   
-        await cloudinary.uploader.destroy(prevCoverImgId) 
+    if (prevCoverImgId) {
+        await cloudinary.uploader.destroy(prevCoverImgId)
     }
 
     if (!coverImage) {
@@ -357,6 +357,81 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "Cover image updated successfully"))
 })
 
+// finding channel by username from req.params
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+
+    if (!username?.trim()) {
+        throw new ApiError(400, "username is missing");
+    }
+
+    // aggregate pipeline
+    // there will be two thing creates one is i subscribed and other is my subscribers
+    const channel = await User.aggregate([
+        {
+            $match: { // finding channel by username
+                username: username?.toLowerCase()
+            }
+        },
+        {   // this field is for how many people are subscribed to this channel
+            $lookup: { // lookup joins two collections
+                from: "subscriptions",  // from subscriptions model
+                localField: "_id",  // find using this field id 
+                foreignField: "channel", // channel id in subscriptions model
+                as: "subscribers" // new field name (join as subscribers)
+            }
+        },
+        {
+            // this field is for how many people i subscribed  
+            $lookup: {
+                from: "subscriptions", // model name
+                localField: "_id",
+                foreignField: "subscriber", // which field to join
+                as: "subscribedTo"
+            }
+        },
+        {   // extra fields adding
+            $addFields:{
+                subscribersCount:{
+                    $size: "$subscribers" // $ - because it is a field from lookup
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: { // subscribed or not button 
+                    $cond:{ // 'condition' it has ( if, then, else )
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]}, // if user is in subscribers list (from lookup)
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {   // final result i'll provide to frontend
+            $project:{
+                fullName: 1, // 1 - true
+                username: 1,
+                avatar: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                coverImage: 1,
+                avatar: 1,
+                email: 1,
+            }
+        }
+    ])
+    if (!channel?.length) {
+        throw new ApiError(404, "Channel not found")
+    }
+    console.log(channel)
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, channel[0], "Channel profile"))
+})
+
+
 
 export {
     registerUser,
@@ -367,5 +442,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile
 }
