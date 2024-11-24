@@ -5,6 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from "jsonwebtoken"
 import { v2 as cloudinary } from "cloudinary"
+import mongoose from 'mongoose'
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -296,10 +297,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     // avatar name is same as db field name
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
-    // getting previous image id from user
+    // getting previous image id from user by splitting and taking last element
     const prevImgId = req.user.avatar.split("/").slice(-1)[0].split(".")[0]
 
-    await cloudinary.uploader.destroy(prevImgId)
+    await cloudinary.uploader.destroy(prevImgId) // deleting the previous image
 
     if (!avatar) {
         throw new ApiError(500, "Something went wrong while uploading avatar")
@@ -377,7 +378,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             $lookup: { // lookup joins two collections
                 from: "subscriptions",  // from subscriptions model
                 localField: "_id",  // find using this field id 
-                foreignField: "channel", // channel id in subscriptions model
+                foreignField: "channel", // joining channel from subscriptions model
                 as: "subscribers" // new field name (join as subscribers)
             }
         },
@@ -391,16 +392,16 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         },
         {   // extra fields adding
-            $addFields:{
-                subscribersCount:{
+            $addFields: {
+                subscribersCount: {
                     $size: "$subscribers" // $ - because it is a field from lookup
                 },
                 channelsSubscribedToCount: {
                     $size: "$subscribedTo"
                 },
                 isSubscribed: { // subscribed or not button 
-                    $cond:{ // 'condition' it has ( if, then, else )
-                        if: {$in: [req.user?._id, "$subscribers.subscriber"]}, // if user is in subscribers list (from lookup)
+                    $cond: { // 'condition' it has ( if, then, else )
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] }, // if user is in subscribers list (from lookup)
                         then: true,
                         else: false
                     }
@@ -408,7 +409,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         },
         {   // final result i'll provide to frontend
-            $project:{
+            $project: {
                 fullName: 1, // 1 - true
                 username: 1,
                 avatar: 1,
@@ -431,7 +432,71 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, channel[0], "Channel profile"))
 })
 
+// getting watch history of user
+const getWatchHistory = asyncHandler(async (req, res) => {
 
+    const user = User.aggregate([
+        {
+            $match: { // finding user by id
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {   // nesting pipeline 1 is for watchHistory, 2 is for video owner
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory", // matching the user watchHistory field with videos _id
+                foreignField: "_id", // videos _id
+                as: "watchHistory",
+
+                // pushing previous pipeline to this new pipeline
+                // we are now on videos pipeline
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner", // videos local field is owner
+                            foreignField: "_id",
+                            as: "owner",
+
+                            pipeline: [ // passing only necessary fields from owner
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        avatar: 1,
+                                        username: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    // from here the owner field is now active for next pipeline
+                    {
+                        $addFields: {
+                            owner: { // taking the first owner[0] element for easy frontend
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    if (!user?.length) {
+        throw new ApiError(404, "User not found")
+    }
+    console.log(user)
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                user[0].watchHistory,
+                "Watch history fetched"
+            )
+        )
+})
 
 export {
     registerUser,
@@ -443,5 +508,6 @@ export {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getWatchHistory
 }
