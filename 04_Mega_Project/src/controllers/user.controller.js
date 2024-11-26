@@ -61,17 +61,15 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // this req.files is from multer that is passed from user.router
+    if (!req.files.avatar || !req.files.avatar[0]) {
+        throw new ApiError(400, "Avatar file is required")
+    }
     const avatarLocalPath = req.files?.avatar[0]?.path;
     // const coverImageLocalPath = req.files?.coverImage[0]?.path || ""; 
 
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path;
-    }
-
-
-    if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar is required")
     }
 
     // upload the local files path to cloudinary
@@ -360,10 +358,12 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 // finding channel by username from req.params
 const getUserChannelProfile = asyncHandler(async (req, res) => {
+    console.log('ok')
     const { username } = req.params;
+    console.log(username)
 
     if (!username?.trim()) {
-        throw new ApiError(400, "username is missing");
+        throw new ApiError(400, "channel name is missing");
     }
 
     // aggregate pipeline
@@ -433,9 +433,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 })
 
 // getting watch history of user
-const getWatchHistory = asyncHandler(async (req, res) => {
+const getWatchHistory = asyncHandler(async (req, res) => { 
 
-    const user = User.aggregate([
+    const user = await User.aggregate([
         {
             $match: { // finding user by id
                 _id: new mongoose.Types.ObjectId(req.user._id)
@@ -484,8 +484,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
     if (!user?.length) {
         throw new ApiError(404, "User not found")
-    }
-    console.log(user)
+    } 
 
     return res
         .status(200)
@@ -497,6 +496,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             )
         )
 })
+
 
 export {
     registerUser,
